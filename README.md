@@ -35,15 +35,15 @@ files.
 | Placeholder | Appears in | Replace with |
 | --- | --- | --- |
 | `hello@clerkly.us` | every page | Your real email address |
-| `+1 (555) 010-1234` / `tel:+15550101234` | every page | Your real phone number |
 | `Tracy Miranda` / `Tracy` | home, about, footers | Your name (or drop it) |
 | `TM` (avatar initials) | home, about | Your initials |
 | `https://www.linkedin.com/` etc. | footer socials | Your real profile URLs |
-| Prices (`$480`, `$1,120`, `$2,100`, `$28/hour`, `From $750`) | home, services, faqs | Your real rates |
 | Stats (`6+ years`, `40+ businesses`, `97%`, `12k+`) | home, about | Your real numbers |
 | Testimonials (Daniel R., Maria P., Amara K.) | home | Real quotes, with permission |
-| `Mon–Fri, 9:00–18:00 ET` | every page | Your working hours |
 | Topbar notice (`2 retainer slots open`) | every page | Current availability, or delete |
+
+Already set to real values: phone `+1 (619) 730-8655`, availability Wed–Sun 8am–2pm PT,
+and all pricing (below).
 
 **Please do not ship the invented testimonials or statistics as if they were real** —
 swap in genuine ones, or delete those sections until you have them.
@@ -54,6 +54,41 @@ swap in genuine ones, or delete those sections until you have them.
 Both carry a visible note saying so. Have a lawyer in your jurisdiction review them, and
 check that the privacy policy matches the tools you actually use. Update the
 governing-law section in `terms.html` §18 — it currently names Delaware.
+
+---
+
+## Pricing model
+
+Everything is derived from a **$35/hour base rate**. If you change the base, recompute
+the retainer and project numbers below to match.
+
+**Capacity:** Wed–Sun, 8am–2pm PT = 6 hrs/day × 5 days = **30 hrs/week ≈ 130 hrs/month**.
+
+### Retainers (volume discount off base)
+
+| Tier | Hours/mo | Discount | Effective rate | Price |
+| --- | --- | --- | --- | --- |
+| Starter | 20 | 14% | $30/hr | $600/mo |
+| Growth | 50 | 20% | $28/hr | $1,400/mo |
+| Scale | 100 | 26% | $26/hr | $2,600/mo |
+
+Ad-hoc hourly work is billed at the full **$35/hr**, five-hour minimum.
+
+Note that Scale (100 hrs) is roughly 77% of monthly capacity — one Scale client leaves
+room for about one Starter client and nothing else.
+
+### Fixed-price projects
+
+| Project | Price | Implied hours @ $35 |
+| --- | --- | --- |
+| One-page landing site | from $950 | ~27 |
+| 5–7 page marketing site | from $2,400 | ~69 |
+| Shopify store setup | from $1,900 | ~54 |
+| Site rescue / speed fix | from $575 | ~16 |
+| Monthly maintenance | from $225/mo | ~6.5 |
+
+Prices appear in `index.html`, `services.html` and `faqs.html` — including the FAQ
+JSON-LD block at the top of `faqs.html`, which must stay in sync with the visible copy.
 
 ---
 

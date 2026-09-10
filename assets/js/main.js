@@ -44,16 +44,45 @@
     backdrop.className = 'nav-backdrop';
     document.body.appendChild(backdrop);
 
+    var header = $('.site-header');
+    var mqMobile = window.matchMedia('(max-width: 900px)');
+
+    /* Belt and braces with the CSS visibility rule: a closed off-canvas drawer
+       must not be reachable by keyboard or exposed to screen readers. inert is
+       set synchronously so correctness never depends on transition timing. */
+    function syncInert() {
+      var open = toggle.getAttribute('aria-expanded') === 'true';
+      if (mqMobile.matches && !open) menu.setAttribute('inert', '');
+      else menu.removeAttribute('inert');
+    }
+
     function setOpen(open) {
+      /* The drawer's top padding has to clear whatever the header currently
+         measures - the top bar scrolls away, and its notice can wrap to two
+         lines on narrow phones, so this is not a constant. */
+      if (open && header) {
+        var bottom = Math.round(header.getBoundingClientRect().bottom);
+        document.documentElement.style.setProperty('--header-h', bottom + 'px');
+      }
+
       toggle.setAttribute('aria-expanded', String(open));
       menu.classList.toggle('is-open', open);
       backdrop.classList.toggle('is-open', open);
       document.body.classList.toggle('nav-open', open);
+
+      /* Hand focus back to the trigger before the drawer goes inert, so it is
+         never stranded inside a hidden subtree - e.g. when closing by tapping
+         the backdrop rather than the toggle. */
+      if (!open && menu.contains(document.activeElement)) toggle.focus();
+      syncInert();
+
       if (open) {
         var first = menu.querySelector('a, button');
         if (first) first.focus();
       }
     }
+
+    syncInert();
 
     toggle.addEventListener('click', function () {
       setOpen(toggle.getAttribute('aria-expanded') !== 'true');
@@ -73,10 +102,12 @@
       if (e.target.closest('a')) setOpen(false);
     });
 
-    var mq = window.matchMedia('(min-width: 901px)');
-    var onChange = function (e) { if (e.matches) setOpen(false); };
-    if (mq.addEventListener) mq.addEventListener('change', onChange);
-    else if (mq.addListener) mq.addListener(onChange);
+    var onBreakpoint = function () {
+      if (!mqMobile.matches) setOpen(false);
+      else syncInert();
+    };
+    if (mqMobile.addEventListener) mqMobile.addEventListener('change', onBreakpoint);
+    else if (mqMobile.addListener) mqMobile.addListener(onBreakpoint);
   }
 
   /* ----------------------------------------------- Highlight current page */
