@@ -92,34 +92,53 @@ JSON-LD block at the top of `faqs.html`, which must stay in sync with the visibl
 
 ---
 
-## Wiring up the contact form
+## Contact form (Formspree)
 
-The form lives in `contact.html` and is handled by `initForm()` in
-`assets/js/main.js`. Configuration is at the top of that file:
+The form in `contact.html` posts to Formspree, which forwards each submission to the
+inbox configured on the form. Visitors never leave the page and no mail client is
+involved.
 
-```js
-var CONFIG = {
-  formEndpoint: '',            // POST target
-  email: 'hello@clerkly.us'    // mailto fallback
-};
+The endpoint is set in **two** places and they must match:
+
+| Where | Why |
+| --- | --- |
+| `action` on `#contact-form` in `contact.html` | Used if JavaScript fails to load — the browser posts natively and Formspree shows its own thank-you page |
+| `CONFIG.formEndpoint` in `assets/js/main.js` | Used normally — submit is intercepted and sent by `fetch`, so the visitor stays on the page |
+
+Current endpoint: `https://formspree.io/f/xrpgrdab`
+
+### How it behaves
+
+- Client-side validation runs first (required fields, email format, 20-char minimum
+  on the message). `novalidate` is applied by JS, so with JS disabled the browser
+  does its own validation instead.
+- `Accept: application/json` makes Formspree reply with JSON rather than redirecting.
+- Formspree field errors (`{ errors: [{ field, message }] }`) are mapped back onto the
+  matching input and shown inline.
+- On failure the visitor is told to email `hello@clerkly.us` instead.
+
+### Formspree-specific fields
+
+| Field | Purpose |
+| --- | --- |
+| `email` | Formspree uses this as the reply-to, so replying to the notification answers the client directly |
+| `_subject` | Notification subject. JS rewrites it to `clerkly.us enquiry from <name> - <service>` |
+| `_gotcha` | Formspree's built-in honeypot. Hidden from people; if filled, the submission is dropped server-side and by `main.js` |
+
+### Testing it
+
+Formspree rejects requests from `file://`, so open the site over HTTP:
+
+```bash
+python -m http.server 8000    # then http://localhost:8000/contact.html
 ```
 
-**Default (no setup):** with `formEndpoint` empty, submitting opens the visitor's email
-client with the message pre-filled. Works everywhere, but relies on the visitor having a
-mail client configured.
+Note that real test submissions count against the Formspree plan's monthly quota and
+land in the real inbox. To change the destination address, edit the form's settings at
+formspree.io — not this codebase.
 
-**Recommended — [Formspree](https://formspree.io):** create a form, then set:
-
-```js
-formEndpoint: 'https://formspree.io/f/YOUR_FORM_ID'
-```
-
-**Netlify Forms:** add `netlify` and `name="contact"` to the `<form>` tag, set
-`formEndpoint: '/'`, and Netlify captures submissions automatically.
-
-The form already includes client-side validation, an accessible error state, a
-honeypot field (`company_website`) that silently drops bot submissions, and a live
-status message.
+To switch providers, change both places above. Setting `CONFIG.formEndpoint` to `''`
+restores the old behaviour of opening the visitor's mail client.
 
 ---
 

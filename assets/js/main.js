@@ -8,12 +8,13 @@
 
   /* ----------------------------------------------------------- Site config */
   var CONFIG = {
-    /* Where the contact form posts. Works out of the box with Formspree or
-       Netlify Forms. Replace with your own endpoint, e.g.
-       'https://formspree.io/f/xxxxxxxx'. Leave empty ('') to fall back to
-       opening the visitor's email client with the message pre-filled. */
-    formEndpoint: '',
-    /* Fallback inbox used when formEndpoint is empty. */
+    /* Formspree endpoint the contact form posts to. Submissions are forwarded
+       to the inbox configured on that form at formspree.io. This must match the
+       `action` attribute on #contact-form in contact.html, which is what the
+       browser falls back to if this script fails to load.
+       Setting this to '' restores the old mailto behaviour. */
+    formEndpoint: 'https://formspree.io/f/xrpgrdab',
+    /* Shown to the visitor if the POST fails, and used by the mailto fallback. */
     email: 'hello@clerkly.us'
   };
 
@@ -242,6 +243,11 @@
     var submit = form.querySelector('[type="submit"]');
     var submitLabel = submit ? submit.textContent : '';
 
+    /* Suppress native validation bubbles only now that JS is running, so the
+       styled inline errors below are used instead. Without JS the attribute is
+       absent and the browser does its own validation before posting. */
+    form.noValidate = true;
+
     function setStatus(message, kind) {
       if (!status) return;
       status.textContent = message;
@@ -299,7 +305,7 @@
       e.preventDefault();
 
       /* Honeypot: silently accept and drop obvious bot submissions. */
-      var trap = form.querySelector('[name="company_website"]');
+      var trap = form.querySelector('[name="_gotcha"]');
       if (trap && trap.value) {
         setStatus('Thanks - your message has been sent.', 'success');
         form.reset();
@@ -310,11 +316,17 @@
 
       var data = new FormData(form);
 
+      /* Give the notification email a subject worth reading in an inbox. */
+      var who = (data.get('name') || '').toString().trim();
+      var what = (data.get('service') || '').toString().replace(/-/g, ' ');
+      data.set('_subject', 'clerkly.us enquiry' + (who ? ' from ' + who : '') +
+                           (what ? ' - ' + what : ''));
+
       /* No endpoint configured: hand off to the visitor's mail client. */
       if (!CONFIG.formEndpoint) {
         var body = [];
         data.forEach(function (value, key) {
-          if (key === 'company_website' || !String(value).trim()) return;
+          if (key.charAt(0) === '_' || !String(value).trim()) return;
           body.push(key.replace(/_/g, ' ').replace(/\b\w/g, function (c) {
             return c.toUpperCase();
           }) + ': ' + value);
@@ -334,20 +346,43 @@
       }
       setStatus('Sending your message...', 'success');
 
+      /* Accept: application/json is what makes Formspree answer with JSON
+         instead of redirecting the browser to its thank-you page. */
       fetch(CONFIG.formEndpoint, {
         method: 'POST',
         body: data,
         headers: { Accept: 'application/json' }
       })
         .then(function (res) {
-          if (!res.ok) throw new Error('Request failed');
+          return res.json()
+            .catch(function () { return {}; })
+            .then(function (body) { return { ok: res.ok, body: body }; });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            /* Formspree reports problems as { errors: [{ field, message }] } */
+            var errors = result.body && result.body.errors;
+            if (errors && errors.length) {
+              errors.forEach(function (err) {
+                var input = err.field && form.elements[err.field];
+                if (input) fieldError(input, err.message);
+              });
+              throw new Error(errors.map(function (e) {
+                return e.field ? e.field + ' ' + e.message : e.message;
+              }).join('; '));
+            }
+            throw new Error('Request failed');
+          }
+
           form.reset();
           setStatus('Thanks for reaching out. Your message is in - expect a reply ' +
                     'within one business day.', 'success');
         })
-        .catch(function () {
-          setStatus('Something went wrong sending the form. Please email ' +
-                    CONFIG.email + ' instead.', 'error');
+        .catch(function (err) {
+          setStatus((err && err.message && err.message !== 'Request failed'
+              ? 'That did not send: ' + err.message + '. '
+              : 'Something went wrong sending the form. ') +
+            'You can email ' + CONFIG.email + ' instead.', 'error');
         })
         .finally(function () {
           if (submit) {

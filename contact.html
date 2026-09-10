@@ -96,11 +96,28 @@
           wrong answers &mdash; &ldquo;I don&rsquo;t know yet&rdquo; is a perfectly good one.
         </p>
 
-        <form class="form-card mt-2" id="contact-form" novalidate>
-          <!-- Bot trap: real people never see or fill this. -->
+        <!-- Posts to Formspree, which forwards each submission to the inbox
+             configured on the form. action/method are set here as well as in
+             main.js so the form still works if JavaScript fails to load: the
+             browser then submits natively and Formspree shows its own thank-you
+             page. With JS available the submit is intercepted and sent by fetch,
+             so the visitor never leaves this page. -->
+        <form class="form-card mt-2" id="contact-form"
+              action="https://formspree.io/f/xrpgrdab" method="POST">
+
+          <!-- Formspree uses the field named "email" as the reply-to address,
+               so replying to the notification answers the client directly. -->
+
+          <!-- Subject line of the notification email. JS rewrites this to
+               include the sender's name before submitting. -->
+          <input type="hidden" name="_subject" value="New project enquiry from clerkly.us">
+
+          <!-- Bot trap: real people never see or fill this. "_gotcha" is
+               Formspree's built-in honeypot, so a filled value is discarded
+               server-side as well as in main.js. -->
           <div class="hp-field" aria-hidden="true">
-            <label for="company_website">Company website</label>
-            <input type="text" id="company_website" name="company_website" tabindex="-1" autocomplete="off">
+            <label for="_gotcha">Company website</label>
+            <input type="text" id="_gotcha" name="_gotcha" tabindex="-1" autocomplete="off">
           </div>
 
           <div class="field-row">
