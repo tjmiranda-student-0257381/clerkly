@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://clerkly.us/sitemap.xml
